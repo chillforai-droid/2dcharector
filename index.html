@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Character Layer Studio</title>
+<style>
+:root{--bg:#0b1020;--card:#151d31;--line:#2c3854;--text:#f8fafc;--muted:#aeb9cf;--accent:#4f8cff;--danger:#ef4444;--ok:#22c55e}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{position:sticky;top:0;z-index:20;background:#0d1426ee;backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:12px 16px}
+header .top{max-width:1400px;margin:auto;display:flex;align-items:center;gap:12px}.brand{font-weight:800;font-size:18px}.badge{font-size:11px;padding:4px 7px;border-radius:999px;background:#17315e;color:#bcd5ff}
+.wrap{max-width:1400px;margin:auto;padding:14px}.grid{display:grid;grid-template-columns:300px minmax(400px,1fr) 320px;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}.card h3{margin:0 0 10px;font-size:15px}
+.drop{border:2px dashed #53627f;border-radius:12px;padding:15px;text-align:center;cursor:pointer}.drop:hover{border-color:var(--accent)}input[type=file]{display:none}
+.hint{font-size:12px;color:var(--muted);line-height:1.5}.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}
+button,select,input[type=text]{border:1px solid #3a4866;background:#0e1628;color:var(--text);border-radius:9px;padding:9px 10px;font:inherit}
+button{cursor:pointer}.btn{width:100%;margin-top:8px}.primary{background:var(--accent);border-color:var(--accent);font-weight:700}.danger{background:#531923;border-color:#7f1d1d}.ghost{background:#111a2e}
+.workspace{position:relative;background:#080d18;border:1px solid var(--line);border-radius:14px;min-height:680px;overflow:hidden}
+.toolbar{display:flex;flex-wrap:wrap;gap:7px;padding:9px;border-bottom:1px solid var(--line);background:#0e1527;position:sticky;top:0;z-index:4}
+.toolbar button.active{background:#1e4e9d;border-color:#4f8cff}.toolbar .sep{width:1px;background:var(--line);margin:0 2px}
+.stage{height:620px;overflow:auto;display:flex;align-items:center;justify-content:center;padding:24px;touch-action:none}
+#stage{position:relative;display:inline-block;box-shadow:0 8px 35px #0008}
+#img{display:block;max-width:none;user-select:none;-webkit-user-drag:none}
+#overlay{position:absolute;left:0;top:0;cursor:crosshair}
+.statusbar{padding:8px 10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between}
+label.small{font-size:12px;color:var(--muted);display:block;margin:9px 0 5px}
+.layer{display:grid;grid-template-columns:30px 1fr auto;gap:7px;align-items:center;padding:7px 0;border-bottom:1px solid #29344c}
+.layer .name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.layer .meta{font-size:10px;color:var(--muted)}
+.layer button{padding:5px 7px}.thumb{width:30px;height:30px;object-fit:contain;background-image:linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%);background-size:8px 8px;background-position:0 0,0 4px,4px -4px,-4px 0;border-radius:5px}
+.layers{max-height:390px;overflow:auto}.empty{padding:20px;text-align:center;color:var(--muted);font-size:12px}
+.notice{padding:9px;border-radius:9px;background:#101b31;color:#c8d6f0;font-size:12px;margin-top:9px}.ok{color:#86efac}.warn{color:#fde68a}
+.toggle{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-top:8px}.toggle input{accent-color:var(--accent)}
+input[type=range]{width:100%}
+.modal{position:fixed;inset:0;background:#0009;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}.modal.open{display:flex}.modalbox{max-width:650px;width:100%;max-height:90vh;overflow:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.kbd{font-size:10px;background:#0b1220;border:1px solid #34415e;border-radius:4px;padding:2px 5px;color:#cbd5e1}
+@media(max-width:1100px){.grid{grid-template-columns:250px 1fr}.right{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:14px}.right .card{margin:0}}
+@media(max-width:760px){.grid{display:block}.workspace{min-height:540px}.stage{height:470px;padding:10px}.right{display:block}.right .card{margin-bottom:14px}.toolbar{position:sticky}.wrap{padding:8px}}
+</style>
+</head>
+<body>
+<header><div class="top"><div class="brand">🎭 Character Layer Studio</div><span class="badge">No AI • Browser only</span></div></header>
+<div class="wrap">
+<div class="grid">
+<aside>
+<div class="card">
+<h3>1. Character Views</h3>
+<label class="drop">📤 Front View — Required<input id="frontFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<div id="frontInfo" class="hint">No front image</div>
+<label class="drop" style="margin-top:8px">📤 Back View — Optional<input id="backFile" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<div id="backInfo" class="hint">No back image</div>
+<div class="row" style="margin-top:9px"><button id="frontBtn" class="primary">Front</button><button id="backBtn">Back</button></div>
+<div class="notice">Recommended: full-body, centered, front/back view, arms and legs clearly separated, plain or transparent background.</div>
+</div>
+<div class="card">
+<h3>2. Part</h3>
+<select id="partSelect">
+<option>Head</option><option>Hair</option><option>Body</option><option>Left Arm</option><option>Right Arm</option><option>Left Hand</option><option>Right Hand</option><option>Left Leg</option><option>Right Leg</option><option>Left Foot</option><option>Right Foot</option><option>Clothing</option><option>Dupatta</option><option>Accessories</option><option>Custom</option>
+</select>
+<input id="customPart" type="text" placeholder="Custom part name" style="display:none;margin-top:8px;width:100%">
+<button id="extractBtn" class="btn primary">✂️ Extract Selection</button>
+<button id="clearBtn" class="btn danger">Clear Selection</button>
+</div>
+<div class="card">
+<h3>3. Tools</h3>
+<div class="row"><button id="undoBtn">↶ Undo</button><button id="redoBtn">↷ Redo</button></div>
+<div class="row" style="margin-top:8px"><button id="zoomOut">−</button><button id="fitBtn">Fit</button><button id="zoomIn">+</button></div>
+<label class="toggle"><input id="snap" type="checkbox"> Snap polygon points</label>
+</div>
+</aside>
+
+<main>
+<div class="workspace">
+<div class="toolbar">
+<button id="selectTool" class="active">✂️ Polygon</button>
+<button id="moveTool">🖐 Move</button><span class="sep"></span>
+<button id="resetView">⟳ Reset</button>
+<button id="downloadCurrent">⬇ Current</button>
+<button id="exportZip">📦 Export ZIP</button>
+<button id="exportJson">JSON</button>
+</div>
+<div class="stage" id="stageWrap"><div id="stage"><img id="img" draggable="false"><canvas id="overlay"></canvas></div></div>
+<div class="statusbar"><span id="status">Upload Front View to begin.</span><span id="coords">—</span></div>
+</div>
+</main>
+
+<aside class="right">
+<div class="card">
+<h3>Layers / Parts</h3>
+<div id="layers" class="layers"><div class="empty">No extracted parts yet.</div></div>
+</div>
+<div class="card">
+<h3>Export</h3>
+<label class="small">Character name</label>
+<input id="charName" type="text" value="Shalini">
+<button id="downloadAll" class="btn primary">⬇ Download All PNGs</button>
+<button id="manifestBtn" class="btn">📄 Download Manifest</button>
+<div class="notice">Exported PNGs keep transparent pixels outside your selected polygon. This tool does not invent hidden pixels.</div>
+</div>
+</aside>
+</div>
+</div>
+
+<div class="modal" id="helpModal"><div class="modalbox">
+<h3>How to use</h3>
+<p class="hint">1. Upload Front. 2. Select a part. 3. Tap/click around that part to create a polygon. 4. Tap Extract. 5. Repeat. 6. Upload Back and repeat if needed. 7. Export ZIP.</p>
+<p class="hint">Mobile: zoom with the buttons, scroll the stage, and tap points around the body part. Desktop: mouse works normally.</p>
+<button id="closeHelp" class="btn primary">Close</button>
+</div></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const img=$('img'), overlay=$('overlay'), octx=overlay.getContext('2d');
+const stage=$('stage'), wrap=$('stageWrap');
+let views={front:{src:null,name:null},back:{src:null,name:null}};
+let currentView='front', scale=1, tool='polygon', points=[], parts=[];
+let undoStack=[], redoStack=[];
+
+function fileLoad(file,view){
+ if(!file)return;
+ const url=URL.createObjectURL(file);
+ const im=new Image();
+ im.onload=()=>{
+   views[view]={src:url,name:file.name,width:im.naturalWidth,height:im.naturalHeight};
+   if(view==='front'){$('frontInfo').textContent=`${file.name} • ${im.naturalWidth}×${im.naturalHeight}`; currentView='front'}
+   else $('backInfo').textContent=`${file.name} • ${im.naturalWidth}×${im.naturalHeight}`;
+   showView(view); validate();
+ };
+ im.src=url;
+}
+$('frontFile').onchange=e=>fileLoad(e.target.files[0],'front');
+$('backFile').onchange=e=>fileLoad(e.target.files[0],'back');
+$('frontBtn').onclick=()=>{if(views.front.src){currentView='front';showView('front')}};
+$('backBtn').onclick=()=>{if(views.back.src){currentView='back';showView('back')}};
+
+function showView(v){
+ currentView=v; points=[]; img.onload=()=>{setScale(1);drawOverlay()}; img.src=views[v].src;
+ $('frontBtn').classList.toggle('primary',v==='front');$('backBtn').classList.toggle('primary',v==='back');
+ $('status').textContent=`${v==='front'?'Front':'Back'} view • Select a body part and draw around it.`;
+}
+function setScale(s){
+ if(!img.naturalWidth)return;
+ scale=Math.max(.15,Math.min(4,s));
+ img.style.width=(img.naturalWidth*scale)+'px';img.style.height=(img.naturalHeight*scale)+'px';
+ overlay.width=img.naturalWidth;overlay.height=img.naturalHeight;
+ overlay.style.width=img.naturalWidth*scale+'px';overlay.style.height=img.naturalHeight*scale+'px';
+ stage.style.width=img.naturalWidth*scale+'px';stage.style.height=img.naturalHeight*scale+'px';
+ drawOverlay();
+}
+function fit(){
+ if(!img.naturalWidth)return;
+ const pad=30, availW=Math.max(100,wrap.clientWidth-pad*2),availH=Math.max(150,wrap.clientHeight-80);
+ setScale(Math.min(availW/img.naturalWidth,availH/img.naturalHeight,1));
+}
+$('fitBtn').onclick=fit;$('zoomIn').onclick=()=>setScale(scale*1.2);$('zoomOut').onclick=()=>setScale(scale/1.2);$('resetView').onclick=fit;
+
+function pos(e){
+ const r=overlay.getBoundingClientRect();
+ let x=(e.clientX-r.left)/scale,y=(e.clientY-r.top)/scale;
+ if($('snap').checked){x=Math.round(x/5)*5;y=Math.round(y/5)*5}
+ return [Math.max(0,Math.min(img.naturalWidth,x)),Math.max(0,Math.min(img.naturalHeight,y))];
+}
+overlay.addEventListener('pointerdown',e=>{
+ if(tool!=='polygon'||!img.naturalWidth)return;
+ overlay.setPointerCapture?.(e.pointerId);points.push(pos(e));drawOverlay();
+});
+overlay.addEventListener('pointermove',e=>{
+ const p=pos(e);$('coords').textContent=`x ${Math.round(p[0])} • y ${Math.round(p[1])}`;
+});
+overlay.addEventListener('dblclick',e=>{e.preventDefault();extract()});
+
+function drawOverlay(){
+ octx.clearRect(0,0,overlay.width,overlay.height);
+ if(!points.length)return;
+ octx.beginPath();octx.moveTo(...points[0]);points.slice(1).forEach(p=>octx.lineTo(...p));octx.strokeStyle='#4f8cff';octx.lineWidth=Math.max(3,overlay.width/600);octx.stroke();
+ points.forEach((p,i)=>{octx.fillStyle='#fff';octx.beginPath();octx.arc(p[0],p[1],Math.max(4,overlay.width/500),0,Math.PI*2);octx.fill();octx.fillStyle='#2563eb';octx.beginPath();octx.arc(p[0],p[1],Math.max(2,overlay.width/800),0,Math.PI*2);octx.fill()});
+}
+$('clearBtn').onclick=()=>{points=[];drawOverlay()};
+
+function saveHistory(){undoStack.push(JSON.stringify(parts.map(p=>({name:p.name,view:p.view,data:p.data,x:p.x,y:p.y,w:p.w,h:p.h}))));if(undoStack.length>30)undoStack.shift();redoStack=[]}
+function restore(serial){
+ parts=[];JSON.parse(serial).forEach(x=>{const c=document.createElement('canvas');c.width=x.w;c.height=x.h;const cx=c.getContext('2d');const im=new Image();im.onload=()=>{cx.drawImage(im,0,0);p.data=c.toDataURL('image/png');renderLayers()};let p={...x,data:c.toDataURL('image/png'),canvas:c};parts.push(p);im.src=x.data});renderLayers();
+}
+$('undoBtn').onclick=()=>{if(!undoStack.length)return;redoStack.push(JSON.stringify(parts.map(p=>({name:p.name,view:p.view,data:p.data,x:p.x,y:p.y,w:p.w,h:p.h}))));restore(undoStack.pop())};
+$('redoBtn').onclick=()=>{if(!redoStack.length)return;undoStack.push(JSON.stringify(parts.map(p=>({name:p.name,view:p.view,data:p.data,x:p.x,y:p.y,w:p.w,h:p.h}))));restore(redoStack.pop())};
+
+function partName(){let n=$('partSelect').value;return n==='Custom'?($('customPart').value.trim()||'Custom Part'):n}
+$('partSelect').onchange=e=>$('customPart').style.display=e.target.value==='Custom'?'block':'none';
+
+function extract(){
+ if(points.length<3){alert('कम से कम 3 points लगाएँ।');return}
+ if(!img.naturalWidth){alert('पहले image upload करें।');return}
+ saveHistory();
+ const xs=points.map(p=>p[0]),ys=points.map(p=>p[1]);
+ const minX=Math.max(0,Math.floor(Math.min(...xs))),minY=Math.max(0,Math.floor(Math.min(...ys)));
+ const maxX=Math.min(img.naturalWidth,Math.ceil(Math.max(...xs))),maxY=Math.min(img.naturalHeight,Math.ceil(Math.max(...ys)));
+ const c=document.createElement('canvas');c.width=Math.max(1,maxX-minX);c.height=Math.max(1,maxY-minY);const cx=c.getContext('2d');
+ cx.save();cx.beginPath();cx.moveTo(points[0][0]-minX,points[0][1]-minY);points.slice(1).forEach(p=>cx.lineTo(p[0]-minX,p[1]-minY));cx.closePath();cx.clip();cx.drawImage(img,-minX,-minY);cx.restore();
+ parts.push({name:partName(),view:currentView,canvas:c,data:c.toDataURL('image/png'),x:minX,y:minY,w:c.width,h:c.height,visible:true});
+ points=[];drawOverlay();renderLayers();$('status').textContent=`Extracted: ${currentView} / ${partName()}`;
+}
+$('extractBtn').onclick=extract;
+
+function renderLayers(){
+ const box=$('layers');box.innerHTML='';
+ if(!parts.length){box.innerHTML='<div class="empty">No extracted parts yet.</div>';return}
+ parts.slice().reverse().forEach((p,ri)=>{
+  const i=parts.indexOf(p),row=document.createElement('div');row.className='layer';
+  const th=document.createElement('img');th.className='thumb';th.src=p.data;
+  const info=document.createElement('div');info.className='name';info.innerHTML=`${p.name}<div class="meta">${p.view} • ${p.w}×${p.h}</div>`;
+  const dl=document.createElement('button');dl.textContent='⬇';dl.title='Download';dl.onclick=()=>downloadData(p.data,`${slug(p.view)}_${slug(p.name)}.png`);
+  const del=document.createElement('button');del.textContent='✕';del.title='Delete';del.onclick=()=>{saveHistory();parts.splice(i,1);renderLayers()};
+  row.append(th,info,dl);row.append(del);box.append(row);
+ });
+}
+function slug(s){return s.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')||'part'}
+function downloadData(data,name){const a=document.createElement('a');a.href=data;a.download=name;a.click()}
+$('downloadCurrent').onclick=()=>{if(parts.length)downloadData(parts[parts.length-1].data,`${slug(parts[parts.length-1].view)}_${slug(parts[parts.length-1].name)}.png`);else alert('No extracted part.')};
+
+function manifest(){
+ return {format:'Character-Layer-Studio',version:1,character:$('charName').value.trim()||'Character',views:Object.keys(views).filter(v=>views[v].src).map(v=>({view:v,filename:views[v].name,width:views[v].width,height:views[v].height})),parts:parts.map((p,i)=>({id:i+1,name:p.name,view:p.view,x:p.x,y:p.y,width:p.w,height:p.h,filename:`${slug(p.view)}_${slug(p.name)}.png`}))};
+}
+$('manifestBtn').onclick=()=>downloadData('data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(manifest(),null,2)),`${slug($('charName').value)}_manifest.json`);
+$('exportJson').onclick=()=>downloadData('data:application/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(manifest(),null,2)),`${slug($('charName').value)}_manifest.json`);
+
+async function exportZip(){
+ if(!parts.length){alert('पहले कम से कम एक part extract करें।');return}
+ if(!window.JSZip){alert('ZIP library load नहीं हुई। Internet के बिना individual PNG download करें।');return}
+ const zip=new JSZip(), folder=zip.folder(slug($('charName').value)||'character');
+ parts.forEach(p=>folder.file(`${slug(p.view)}_${slug(p.name)}.png`,p.data.split(',')[1],{base64:true}));
+ folder.file('manifest.json',JSON.stringify(manifest(),null,2));
+ const blob=await zip.generateAsync({type:'blob'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${slug($('charName').value)||'character'}_parts.zip`;a.click();
+}
+$('exportZip').onclick=exportZip;
+function validate(){
+ const v=views.front.src?'<span class="ok">✓ Front ready</span>':'Front required';
+ const b=views.back.src?' • <span class="ok">✓ Back ready</span>':' • Back optional';
+ $('status').innerHTML=v+b;
+}
+
+$('selectTool').onclick=()=>{tool='polygon';$('selectTool').classList.add('active');$('moveTool').classList.remove('active');overlay.style.cursor='crosshair'};
+$('moveTool').onclick=()=>{tool='move';$('moveTool').classList.add('active');$('selectTool').classList.remove('active');overlay.style.cursor='grab'};
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){$('clearBtn').click()}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z')$('undoBtn').click()});
+
+fit();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+</body></html>
